@@ -20,6 +20,7 @@ import { TipModal } from './components/TipModal';
 import { SubscribeModal } from './components/SubscribeModal';
 import { TodaysPaperModal } from './components/TodaysPaperModal';
 import { SavedArticlesDrawer } from './components/SavedArticlesDrawer';
+import { PollTracker } from './components/PollTracker';
 
 import { ARTICLES_DATA } from './data/mockNewsData';
 import { Article, SectionTab, GameKey } from './types/news';
@@ -133,6 +134,7 @@ export default function App() {
         savedCount={savedArticleIds.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSelectArticle={(id) => setSelectedArticleId(id)}
       />
 
       {/* SEARCH RESULTS VIEW */}
@@ -541,16 +543,8 @@ export default function App() {
                   </ul>
                 </div>
 
-                {/* Polls Tracker Bar */}
-                <div className="bg-[#F7F7F7] p-3 border border-nytBorder flex flex-wrap items-center justify-between text-xs mb-6">
-                  <span className="font-bold text-[#121212]">The Latest Polls:</span>
-                  <div className="flex space-x-4 text-[11px] text-[#326891] font-semibold">
-                    <button onClick={() => setSelectedArticleId('texas-senate-race-tightens')} className="hover:underline">Senate Tracker ›</button>
-                    <button onClick={() => setSelectedArticleId('texas-senate-race-tightens')} className="hover:underline">House Forecast ›</button>
-                    <button onClick={() => setSelectedArticleId('texas-senate-race-tightens')} className="hover:underline">Governor Races ›</button>
-                    <button onClick={() => setSelectedArticleId('texas-senate-race-tightens')} className="hover:underline">Presidential Approval ›</button>
-                  </div>
-                </div>
+                {/* Interactive Polls Tracker Bar */}
+                <PollTracker />
 
                 {/* Secondary Grid in Left Section: General News */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-nytBorder">

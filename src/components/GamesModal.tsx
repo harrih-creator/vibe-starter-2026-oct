@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, RefreshCw, CheckCircle, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle, RotateCcw, Share2, Timer, Sparkles } from 'lucide-react';
 import { GameKey } from '../types/news';
 
 interface GamesModalProps {
@@ -16,15 +16,9 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
   const [wordleCurrentInput, setWordleCurrentInput] = useState<string>('');
   const [wordleGameOver, setWordleGameOver] = useState<boolean>(false);
   const [wordleWon, setWordleWon] = useState<boolean>(false);
+  const [copiedWordle, setCopiedWordle] = useState<boolean>(false);
 
   // THE MINI STATE
-  // 5x5 Crossword grid
-  // Grid layout:
-  // Row 0: P R I N T
-  // Row 1: A L O N E
-  // Row 2: P A P E R
-  // Row 3: E V E N T
-  // Row 4: R E A D S
   const MINI_SOLUTION = [
     ['P', 'R', 'I', 'N', 'T'],
     ['A', 'L', 'O', 'N', 'E'],
@@ -41,6 +35,17 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
   ]);
   const [miniChecked, setMiniChecked] = useState<boolean>(false);
   const [miniWon, setMiniWon] = useState<boolean>(false);
+  const [miniSeconds, setMiniSeconds] = useState<number>(0);
+  const [selectedClue, setSelectedClue] = useState<string>('1A');
+
+  // Timer for the mini
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTab === 'mini' && !miniWon) {
+      interval = setInterval(() => setMiniSeconds((s) => s + 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeTab, miniWon]);
 
   // CONNECTIONS STATE
   const CONNECTIONS_ITEMS = [
@@ -79,7 +84,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
   const [beeScore, setBeeScore] = useState<number>(14);
 
   // Sync tab with props
-  React.useEffect(() => {
+  useEffect(() => {
     if (gameKey) setActiveTab(gameKey);
   }, [gameKey]);
 
@@ -111,6 +116,28 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
     }
   };
 
+  const getWordleKeyColor = (char: string) => {
+    let status = '';
+    for (const g of wordleGuesses) {
+      if (!g || g.length < 5) continue;
+      for (let i = 0; i < 5; i++) {
+        if (g[i] === char) {
+          if (TARGET_WORD[i] === char) return 'bg-[#6AAA64] text-white';
+          if (TARGET_WORD.includes(char)) status = 'bg-[#C9B458] text-white';
+          else if (!status) status = 'bg-[#787C7E] text-white';
+        }
+      }
+    }
+    return status || 'bg-gray-200 hover:bg-gray-300 text-black';
+  };
+
+  const copyWordleShare = () => {
+    const text = `Wordle Wednesday (Oct 14, 2026) ${wordleGuesses.length}/6\n\n🟩🟩🟩🟩🟩`;
+    navigator.clipboard?.writeText(text);
+    setCopiedWordle(true);
+    setTimeout(() => setCopiedWordle(false), 2000);
+  };
+
   const resetWordle = () => {
     setWordleGuesses(['']);
     setWordleCurrentInput('');
@@ -129,7 +156,6 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
 
   const submitConnections = () => {
     if (selectedWords.length !== 4) return;
-    // Check if all 4 belong to same category
     const items = CONNECTIONS_ITEMS.filter((i) => selectedWords.includes(i.word));
     const firstCat = items[0].category;
     const allMatch = items.every((i) => i.category === firstCat);
@@ -166,10 +192,16 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
     setMiniWon(true);
   };
 
+  const formatMiniTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div 
-        className="bg-white border border-black w-full max-w-2xl rounded-none shadow-2xl relative my-auto max-h-[92vh] flex flex-col"
+        className="bg-white border border-black w-full max-w-2xl rounded-none shadow-2xl relative my-auto max-h-[92vh] flex flex-col font-sansMeta"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -177,13 +209,13 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
           <div className="flex items-center space-x-2">
             <span className="font-masthead text-xl font-normal">NYT Games</span>
             <span className="text-gray-400">|</span>
-            <span className="font-sansMeta text-xs font-bold uppercase tracking-wider text-nytBlack">
+            <span className="text-xs font-bold uppercase tracking-wider text-nytBlack">
               Daily Brain Puzzles
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-black hover:bg-gray-200 transition"
+            className="p-1 text-gray-500 hover:text-black hover:bg-gray-200 transition cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -201,7 +233,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as GameKey)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 border-r border-nytBorder whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-2.5 border-r border-nytBorder whitespace-nowrap transition-colors cursor-pointer ${
                 activeTab === tab.id
                   ? 'border-b-2 border-b-black bg-gray-50 text-black font-bold'
                   : 'text-gray-500 hover:text-black hover:bg-gray-50'
@@ -216,7 +248,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 font-sansMeta">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {/* WORDLE TAB */}
           {activeTab === 'wordle' && (
             <div className="max-w-md mx-auto flex flex-col items-center">
@@ -241,20 +273,20 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
 
                         if (!isCurrentRow && wordleGuesses[rowIndex]) {
                           if (TARGET_WORD[colIndex] === letter) {
-                            cellBg = 'bg-[#6AAA64] border-[#6AAA64] text-white';
+                            cellBg = 'bg-[#6AAA64] border-[#6AAA64] text-white font-bold';
                           } else if (TARGET_WORD.includes(letter)) {
-                            cellBg = 'bg-[#C9B458] border-[#C9B458] text-white';
+                            cellBg = 'bg-[#C9B458] border-[#C9B458] text-white font-bold';
                           } else {
-                            cellBg = 'bg-[#787C7E] border-[#787C7E] text-white';
+                            cellBg = 'bg-[#787C7E] border-[#787C7E] text-white font-bold';
                           }
                         } else if (letter) {
-                          cellBg = 'bg-white border-2 border-black text-black';
+                          cellBg = 'bg-white border-2 border-black text-black font-bold';
                         }
 
                         return (
                           <div
                             key={colIndex}
-                            className={`w-12 h-12 flex items-center justify-center font-bold text-xl uppercase transition-colors ${cellBg}`}
+                            className={`w-12 h-12 flex items-center justify-center text-xl uppercase transition-all duration-200 ${cellBg}`}
                           >
                             {letter}
                           </div>
@@ -267,11 +299,22 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
 
               {/* Status Message */}
               {wordleGameOver && (
-                <div className="mb-4 text-center p-3 border border-black bg-gray-50 w-full rounded">
+                <div className="mb-4 text-center p-3.5 border border-black bg-gray-50 w-full rounded animate-in zoom-in-95 duration-200">
                   {wordleWon ? (
-                    <div className="text-emerald-700 font-bold flex items-center justify-center gap-1.5">
-                      <CheckCircle className="w-5 h-5" />
-                      <span>Splendid! You guessed {TARGET_WORD}!</span>
+                    <div className="space-y-1.5">
+                      <div className="text-emerald-700 font-bold flex items-center justify-center gap-1.5 text-sm">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span>Genius! You solved Wordle in {wordleGuesses.length} guesses!</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 pt-1">
+                        <button
+                          onClick={copyWordleShare}
+                          className="px-3 py-1 bg-black text-white text-xs font-bold rounded flex items-center gap-1 hover:bg-gray-800 transition cursor-pointer"
+                        >
+                          <Share2 className="w-3 h-3" />
+                          <span>{copiedWordle ? 'Copied to Clipboard!' : 'Share Result'}</span>
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-red-700 font-bold">
@@ -280,21 +323,21 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
                   )}
                   <button
                     onClick={resetWordle}
-                    className="mt-2 text-xs font-bold underline hover:text-black flex items-center justify-center gap-1 mx-auto"
+                    className="mt-2 text-xs font-bold underline hover:text-black flex items-center justify-center gap-1 mx-auto cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" /> Play Again
                   </button>
                 </div>
               )}
 
-              {/* Virtual Keyboard */}
+              {/* Virtual Keyboard with dynamic key colors */}
               <div className="w-full max-w-sm space-y-1.5 select-none">
                 {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row, rIdx) => (
                   <div key={rIdx} className="flex justify-center gap-1">
                     {rIdx === 2 && (
                       <button
                         onClick={() => handleWordleKey('ENTER')}
-                        className="px-2 py-3 bg-gray-200 hover:bg-gray-300 text-[11px] font-bold rounded cursor-pointer"
+                        className="px-2 py-3 bg-gray-200 hover:bg-gray-300 text-[10px] font-bold rounded cursor-pointer transition active:scale-95"
                       >
                         ENTER
                       </button>
@@ -303,7 +346,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
                       <button
                         key={char}
                         onClick={() => handleWordleKey(char)}
-                        className="w-8 h-10 bg-gray-200 hover:bg-gray-300 font-bold text-sm rounded flex items-center justify-center cursor-pointer transition active:scale-95"
+                        className={`w-8 h-10 font-bold text-sm rounded flex items-center justify-center cursor-pointer transition active:scale-95 ${getWordleKeyColor(char)}`}
                       >
                         {char}
                       </button>
@@ -311,7 +354,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
                     {rIdx === 2 && (
                       <button
                         onClick={() => handleWordleKey('BACKSPACE')}
-                        className="px-2 py-3 bg-gray-200 hover:bg-gray-300 text-[11px] font-bold rounded cursor-pointer"
+                        className="px-2.5 py-3 bg-gray-200 hover:bg-gray-300 text-xs font-bold rounded cursor-pointer transition active:scale-95"
                       >
                         ⌫
                       </button>
@@ -328,18 +371,23 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-nytBorder">
                 <div>
                   <h3 className="font-headline text-2xl font-bold">The Mini Crossword</h3>
-                  <p className="text-xs text-gray-500">Wednesday, October 14, 2026 · Edited by Joel Fagliano</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                    <span className="flex items-center gap-1 font-mono font-bold text-black">
+                      <Timer className="w-3.5 h-3.5" /> {formatMiniTime(miniSeconds)}
+                    </span>
+                    <span>· Wednesday, October 14, 2026</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={checkMiniCrossword}
-                    className="px-3 py-1 bg-black text-white text-xs font-bold rounded-none hover:bg-gray-800 transition"
+                    className="px-3 py-1 bg-black text-white text-xs font-bold hover:bg-gray-800 transition cursor-pointer"
                   >
                     Check
                   </button>
                   <button
                     onClick={autoFillMini}
-                    className="px-3 py-1 border border-gray-400 text-xs font-bold hover:border-black transition"
+                    className="px-3 py-1 border border-gray-400 text-xs font-bold hover:border-black transition cursor-pointer"
                   >
                     Solve
                   </button>
@@ -347,8 +395,8 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
               </div>
 
               {miniWon && (
-                <div className="mb-4 bg-emerald-50 border border-emerald-400 p-2.5 text-xs text-emerald-800 font-bold text-center">
-                  🎉 Congratulations! You solved the Wednesday Mini Crossword!
+                <div className="mb-4 bg-emerald-50 border border-emerald-400 p-2.5 text-xs text-emerald-800 font-bold text-center animate-in zoom-in-95">
+                  🎉 Congratulations! You solved the Wednesday Mini Crossword in {formatMiniTime(miniSeconds)}!
                 </div>
               )}
 
@@ -457,7 +505,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
 
               {/* Feedback toast */}
               {connectionsMsg && (
-                <div className="text-center text-xs font-bold text-nytBlue mb-2 animate-bounce">
+                <div className="text-center text-xs font-bold text-[#326891] mb-2 animate-bounce">
                   {connectionsMsg}
                 </div>
               )}
@@ -472,7 +520,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
                       <button
                         key={item.word}
                         onClick={() => toggleConnectionWord(item.word)}
-                        className={`h-16 flex items-center justify-center font-bold text-xs uppercase p-1 border rounded transition text-center ${
+                        className={`h-16 flex items-center justify-center font-bold text-xs uppercase p-1 border rounded transition text-center cursor-pointer ${
                           isSelected
                             ? 'bg-[#5A5A5A] text-white border-black scale-[0.98]'
                             : 'bg-[#EFEFE6] text-black border-transparent hover:bg-[#E2E2D8]'
@@ -499,20 +547,20 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
                     onClick={() => {
                       setConnectionsShuffled([...connectionsShuffled].sort(() => Math.random() - 0.5));
                     }}
-                    className="px-3 py-1.5 border border-gray-400 rounded-full text-xs font-semibold hover:border-black"
+                    className="px-3 py-1.5 border border-gray-400 rounded-full text-xs font-semibold hover:border-black cursor-pointer"
                   >
                     Shuffle
                   </button>
                   <button
                     onClick={() => setSelectedWords([])}
-                    className="px-3 py-1.5 border border-gray-400 rounded-full text-xs font-semibold hover:border-black"
+                    className="px-3 py-1.5 border border-gray-400 rounded-full text-xs font-semibold hover:border-black cursor-pointer"
                   >
                     Deselect all
                   </button>
                   <button
                     onClick={submitConnections}
                     disabled={selectedWords.length !== 4}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
                       selectedWords.length === 4
                         ? 'bg-black text-white hover:bg-gray-800'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -568,7 +616,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
               <div className="flex items-center justify-center gap-3 mb-4">
                 <button
                   onClick={() => setSpellingBeeInput((p) => p.slice(0, -1))}
-                  className="px-3 py-1 border border-gray-400 rounded-full text-xs font-semibold hover:border-black"
+                  className="px-3 py-1 border border-gray-400 rounded-full text-xs font-semibold hover:border-black cursor-pointer"
                 >
                   Delete
                 </button>
@@ -582,7 +630,7 @@ export const GamesModal: React.FC<GamesModalProps> = ({ gameKey, onClose }) => {
                       setSpellingBeeInput('');
                     }
                   }}
-                  className="px-5 py-1 bg-black text-white rounded-full text-xs font-bold hover:bg-gray-800"
+                  className="px-5 py-1 bg-black text-white rounded-full text-xs font-bold hover:bg-gray-800 cursor-pointer"
                 >
                   Enter
                 </button>

@@ -11,13 +11,14 @@
 
 .font-masthead {
   font-family: var(--font-masthead);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
 }
 
 .font-headline {
   font-family: var(--font-headline);
-  letter-spacing: -0.015em;
-  line-height: 1.15;
+  letter-spacing: -0.018em;
+  line-height: 1.14;
+  text-wrap: balance;
 }
 
 .font-body-serif {
@@ -46,6 +47,14 @@
 
 .rule-double-top {
   border-top: 3px double #121212;
+}
+
+/* Subtle article hover underlines matching authentic NYT */
+.nyt-headline-hover:hover {
+  color: #5a5a5a;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 /* Smooth custom scrollbars */

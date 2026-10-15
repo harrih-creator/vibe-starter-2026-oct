@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bookmark, User, X } from 'lucide-react';
+import { Search, Bookmark, X, CloudSun, TrendingUp, AlertCircle } from 'lucide-react';
 import { SectionTab } from '../types/news';
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   savedCount: number;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  onSelectArticle?: (id: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,11 +23,13 @@ export const Header: React.FC<HeaderProps> = ({
   savedCount,
   searchQuery,
   onSearchChange,
+  onSelectArticle,
 }) => {
   const [activeEdition, setActiveEdition] = useState<'U.S.' | 'INTERNATIONAL' | 'CANADA' | 'ESPAÑOL' | '中文'>('U.S.');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showBreakingBanner, setShowBreakingBanner] = useState(true);
 
   const sections: SectionTab[] = [
     'U.S.',
@@ -53,8 +56,31 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="max-w-[1280px] mx-auto px-4 lg:px-8 font-sansMeta">
+      {/* Breaking News Ribbon (Dismissible) */}
+      {showBreakingBanner && (
+        <div className="bg-[#FFF4F2] border-b border-[#F7D4CF] py-1.5 px-3 flex items-center justify-between text-xs text-[#B00020]">
+          <div
+            onClick={() => onSelectArticle && onSelectArticle('ukraine-exposure-satellite')}
+            className="flex items-center space-x-2 cursor-pointer hover:underline truncate"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#B00020] inline-block animate-pulse shrink-0" />
+            <span className="font-bold uppercase tracking-wider text-[10px] shrink-0">Breaking News:</span>
+            <span className="text-[#121212] truncate text-[11px]">
+              Power cut to 600,000 in Kyiv after morning missile strike; Pentagon assessing satellite disruptions.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowBreakingBanner(false)}
+            className="text-gray-400 hover:text-black p-0.5 ml-2 shrink-0"
+            aria-label="Dismiss breaking news alert"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Utility Bar: Search, Editions, Date, Action Buttons */}
-      <div className="flex items-center justify-between text-[11px] text-[#121212] pt-2 pb-1 border-b border-transparent">
+      <div className="flex items-center justify-between text-[11px] text-[#121212] pt-2.5 pb-1 border-b border-transparent">
         {/* Left: Search and Editions */}
         <div className="flex items-center space-x-3">
           {/* Search Trigger */}
@@ -76,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={ed}
                 onClick={() => setActiveEdition(ed)}
-                className={`transition-colors uppercase ${
+                className={`transition-colors uppercase cursor-pointer ${
                   activeEdition === ed
                     ? 'font-bold text-[#121212] underline decoration-1 underline-offset-4'
                     : 'text-gray-500 hover:text-black'
@@ -93,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Saved Articles Button */}
           <button
             onClick={onOpenSaved}
-            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-700 hover:text-black px-2 py-1.5 rounded transition"
+            className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-700 hover:text-black px-2 py-1.5 rounded transition cursor-pointer"
             title="Saved Stories"
           >
             <Bookmark className="w-3.5 h-3.5" />
@@ -125,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Inline Search Bar */}
       {isSearchOpen && (
-        <div className="py-2.5 px-3 bg-gray-50 border border-nytBorder rounded mb-2 flex items-center justify-between">
+        <div className="py-2.5 px-3 bg-gray-50 border border-nytBorder rounded mb-2 flex items-center justify-between animate-in fade-in duration-150">
           <div className="flex items-center space-x-2 flex-1 mr-3">
             <Search className="w-4 h-4 text-gray-400" />
             <input
@@ -157,11 +183,20 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* Date & Today's Paper Row */}
-      <div className="flex items-center justify-between text-[11px] text-[#5A5A5A] py-1">
-        <div>
+      {/* Date, Markets & Today's Paper Row */}
+      <div className="flex flex-wrap items-center justify-between text-[11px] text-[#5A5A5A] py-1 border-t border-transparent">
+        <div className="flex items-center space-x-3">
           <span className="font-bold text-[#121212]">Wednesday, October 14, 2026</span>
-          <span className="hidden sm:inline text-gray-400 ml-2">Today’s Paper · Vol. CLXXV No. 60,982</span>
+          <span className="hidden lg:inline text-gray-300">|</span>
+          <span className="hidden lg:flex items-center gap-1 text-[10px] text-gray-600 font-medium">
+            <CloudSun className="w-3.5 h-3.5 text-amber-600 inline" />
+            New York 64°F
+          </span>
+          <span className="hidden xl:inline text-gray-300">|</span>
+          <span className="hidden xl:flex items-center gap-2 text-[10px] text-gray-500 font-mono">
+            <span>S&amp;P 500 <strong className="text-emerald-700 font-semibold">+0.64%</strong></span>
+            <span>NASDAQ <strong className="text-emerald-700 font-semibold">+1.12%</strong></span>
+          </span>
         </div>
         <div>
           <button
@@ -173,17 +208,17 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Masthead Logo */}
-      <div className="text-center py-2 sm:py-3 border-t border-transparent">
+      {/* Iconic Masthead Logo */}
+      <div className="text-center py-2 sm:py-3 select-none">
         <button
           onClick={() => {
             onSelectSection('All');
             onSearchChange('');
           }}
           aria-label="The New York Times Homepage"
-          className="inline-block hover:opacity-95 transition"
+          className="inline-block hover:opacity-90 transition group cursor-pointer"
         >
-          <h1 className="font-masthead text-5xl sm:text-7xl md:text-[84px] text-black tracking-normal leading-none font-normal select-none">
+          <h1 className="font-masthead text-5xl sm:text-7xl md:text-[84px] text-black tracking-[-0.015em] leading-[0.95] font-normal">
             The New York Times
           </h1>
         </button>
@@ -209,6 +244,7 @@ export const Header: React.FC<HeaderProps> = ({
         </ul>
       </nav>
 
+      {/* Print Double Border Rule */}
       <div className="border-t border-black mb-3"></div>
 
       {/* Free to Read Banner Indicator */}
