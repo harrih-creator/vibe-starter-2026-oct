@@ -1,0 +1,8 @@
+{
+  "name": "The New York Times",
+  "description": "The New York Times: Breaking news, multimedia, reviews & opinion on Washington, business, sports, culture, games, cooking, Wirecutter and more.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
